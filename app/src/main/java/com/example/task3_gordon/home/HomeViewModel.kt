@@ -8,10 +8,16 @@ import kotlinx.coroutines.launch
 import com.example.task3_gordon.data.repositories.OpenDotaHeroRepository
 import com.example.task3_gordon.domain.entities.Hero
 import com.example.task3_gordon.domain.usecases.GetHeroesUseCase
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import javax.inject.Inject
 
-class HomeViewModel : ViewModel() {
+// ViewModel для главного экрана
+@HiltViewModel
+class HomeViewModel @Inject constructor(
+    private val getHeroesUseCase: GetHeroesUseCase // Внедрение зависимости
+) : ViewModel() {
 
     private val _heroes = MutableStateFlow<List<Hero>>(emptyList())
     val heroes: StateFlow<List<Hero>> get() = _heroes
@@ -21,19 +27,13 @@ class HomeViewModel : ViewModel() {
     }
 
     private fun fetchHeroes() {
-        val repository = OpenDotaHeroRepository()
-        val useCase = GetHeroesUseCase(repository)
-
-        // Запуск сетевого запроса в IO контексте
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val heroesList = useCase.execute()
+                val heroesList = getHeroesUseCase.execute()
                 _heroes.value = heroesList
                 Log.d("HomeViewModel", "Heroes received: ${heroesList.size}")
             } catch (e: Exception) {
-                e.printStackTrace()
                 Log.e("HomeViewModel", "Error fetching heroes", e)
-                // Обработка ошибок
             }
         }
     }
